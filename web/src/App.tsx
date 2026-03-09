@@ -25,6 +25,8 @@ import LogsPage from './pages/LogsPage'
 import ChatPage from './pages/ChatPage'
 import BotBuilderPage from './pages/BotBuilderPage'
 import BotListPage from './pages/BotListPage'
+import WorkflowBuilderPage from './pages/WorkflowBuilderPage'
+import GeneratePage from './pages/GeneratePage'
 
 function App() {
     return (
@@ -48,6 +50,10 @@ function App() {
                         {/* Bot management routes */}
                         <Route path="/bots" element={<AuthGuard><BotListPage /></AuthGuard>} />
                         <Route path="/bots/new" element={<AuthGuard><BotBuilderPage /></AuthGuard>} />
+                        {/* Workflow builder */}
+                        <Route path="/workflow-builder/:botId" element={<AuthGuard><WorkflowBuilderPage /></AuthGuard>} />
+                        {/* AI Media Generation */}
+                        <Route path="/generate" element={<AuthGuard><GeneratePage /></AuthGuard>} />
                         {/* Admin routes */}
                         <Route path="/admin" element={<AuthGuard><SubscriptionGuard><AdminPage /></SubscriptionGuard></AuthGuard>} />
                         <Route path="/admin/stripe" element={<AuthGuard><SubscriptionGuard><AdminStripePage /></SubscriptionGuard></AuthGuard>} />

@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
     Send, Bot, Plus, ChevronDown, Clock, Layers,
     MessageSquare, Pin, Archive, Trash2, Edit2, Check, X,
-    Sparkles, Cpu, Menu, Settings
+    Sparkles, Cpu, Menu, Settings, Copy, RotateCcw, ThumbsUp, ThumbsDown
 } from 'lucide-react'
 
 type Id<T extends string> = string & { __tableName: T }
@@ -27,6 +27,8 @@ export default function ChatPage() {
     const archiveConv = useMutation(api.conversations.archive)
     const switchBotMut = useMutation(api.conversations.switchBot)
     const sendMessage = useAction(api.chat.send)
+    const retryMessage = useAction(api.chat.retry)
+    const rateMessage = useAction(api.chat.rateMessage)
 
     const [input, setInput] = useState('')
     const [sending, setSending] = useState(false)
@@ -273,24 +275,55 @@ export default function ChatPage() {
                                             {msg.role === 'user' ? '👤' : (bots?.find(b => b._id === msg.botId)?.avatar || '🤖')}
                                         </div>
                                     )}
-                                    <div style={{
-                                        padding: msg.role === 'system' ? '6px 12px' : '10px 14px',
-                                        borderRadius: msg.role === 'system' ? 20 : 12,
-                                        background: msg.role === 'user' ? 'var(--color-accent)' : msg.role === 'system' ? 'var(--color-surface)' : 'var(--color-card)',
-                                        color: msg.role === 'user' ? 'white' : msg.role === 'system' ? 'var(--color-text-secondary)' : 'var(--color-text)',
-                                        border: msg.role !== 'user' ? '1px solid var(--color-border)' : 'none',
-                                        fontSize: msg.role === 'system' ? '0.75rem' : '0.9rem',
-                                        lineHeight: 1.6, whiteSpace: 'pre-wrap', maxWidth: '85%',
-                                    }}>
-                                        {msg.botName && msg.role === 'assistant' && (
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-accent)', marginBottom: 4 }}>
-                                                {msg.botName}
-                                            </div>
-                                        )}
-                                        {msg.content}
-                                        {msg.durationMs && (
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                <Clock size={10} /> {msg.durationMs}ms
+                                    <div style={{ maxWidth: '85%' }}>
+                                        <div style={{
+                                            padding: msg.role === 'system' ? '6px 12px' : '10px 14px',
+                                            borderRadius: msg.role === 'system' ? 20 : 12,
+                                            background: msg.role === 'user' ? 'var(--color-accent)' : msg.role === 'system' ? 'var(--color-surface)' : 'var(--color-card)',
+                                            color: msg.role === 'user' ? 'white' : msg.role === 'system' ? 'var(--color-text-secondary)' : 'var(--color-text)',
+                                            border: msg.role !== 'user' ? '1px solid var(--color-border)' : 'none',
+                                            fontSize: msg.role === 'system' ? '0.75rem' : '0.9rem',
+                                            lineHeight: 1.6,
+                                        }}>
+                                            {msg.botName && msg.role === 'assistant' && (
+                                                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-accent)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    {msg.botName}
+                                                    {(msg as any).provider && (
+                                                        <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>
+                                                            · {(msg as any).provider}/{((msg as any).model || '').split('/').pop()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <MessageContent content={msg.content} contentType={(msg as any).contentType} />
+                                            {msg.durationMs && (
+                                                <div style={{ fontSize: '0.7rem', color: msg.role === 'user' ? 'rgba(255,255,255,0.7)' : 'var(--color-text-secondary)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Clock size={10} /> {msg.durationMs}ms
+                                                </div>
+                                            )}
+                                        </div>
+                                        {/* Message actions */}
+                                        {msg.role === 'assistant' && (
+                                            <div style={{ display: 'flex', gap: 4, marginTop: 4, paddingLeft: 4 }}>
+                                                <button title="Copy" onClick={() => navigator.clipboard.writeText(msg.content)}
+                                                    style={{ padding: 4, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+                                                    <Copy size={12} />
+                                                </button>
+                                                <button title="Retry" onClick={async () => {
+                                                    if (!id) return; setSending(true)
+                                                    try { await retryMessage({ conversationId: id as any, messageId: msg._id as any }) } catch (e) { console.error(e) }
+                                                    setSending(false)
+                                                }} style={{ padding: 4, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-secondary)', opacity: 0.6 }}>
+                                                    <RotateCcw size={12} />
+                                                </button>
+                                                <button title="Good response" onClick={() => rateMessage({ messageId: msg._id as any, rating: 'up' })}
+                                                    style={{ padding: 4, borderRadius: 4, border: 'none', background: (msg as any).rating === 'up' ? 'var(--color-success)15' : 'transparent', cursor: 'pointer', color: (msg as any).rating === 'up' ? 'var(--color-success)' : 'var(--color-text-secondary)', opacity: (msg as any).rating === 'up' ? 1 : 0.6 }}>
+                                                    <ThumbsUp size={12} />
+                                                </button>
+                                                <button title="Bad response" onClick={() => rateMessage({ messageId: msg._id as any, rating: 'down' })}
+                                                    style={{ padding: 4, borderRadius: 4, border: 'none', background: (msg as any).rating === 'down' ? 'var(--color-danger)15' : 'transparent', cursor: 'pointer', color: (msg as any).rating === 'down' ? 'var(--color-danger)' : 'var(--color-text-secondary)', opacity: (msg as any).rating === 'down' ? 1 : 0.6 }}>
+                                                    <ThumbsDown size={12} />
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -363,6 +396,72 @@ export default function ChatPage() {
             </div>
         </div>
     )
+}
+
+// ── Lightweight Markdown Renderer ────────────────────────────────
+
+function MessageContent({ content, contentType }: { content: string; contentType?: string }) {
+    // For JSON content, render as formatted JSON
+    if (contentType === 'json') {
+        let formatted = content
+        try { formatted = JSON.stringify(JSON.parse(content), null, 2) } catch { /* keep raw */ }
+        return (
+            <pre style={{ margin: 0, padding: 12, borderRadius: 8, background: 'var(--color-bg)', fontSize: '0.8rem', overflow: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                <button onClick={() => navigator.clipboard.writeText(formatted)} style={{ float: 'right', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: 'pointer', fontSize: '0.65rem', color: 'var(--color-text-secondary)' }}>Copy</button>
+                {formatted}
+            </pre>
+        )
+    }
+
+    // For code content
+    if (contentType === 'code') {
+        return (
+            <pre style={{ margin: 0, padding: 12, borderRadius: 8, background: 'var(--color-bg)', fontSize: '0.8rem', overflow: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                {content}
+            </pre>
+        )
+    }
+
+    // Default: render markdown-like content
+    return <div style={{ whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+}
+
+function renderMarkdown(text: string): string {
+    let html = escapeHtml(text)
+
+    // Code blocks: ```lang\n...\n```
+    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) =>
+        `<pre style="margin:8px 0;padding:12px;border-radius:8px;background:var(--color-bg);font-family:monospace;font-size:0.8rem;overflow:auto;white-space:pre-wrap"><code>${code.trim()}</code></pre>`)
+
+    // Inline code: `...`
+    html = html.replace(/`([^`]+)`/g, '<code style="padding:1px 5px;border-radius:4px;background:var(--color-bg);font-family:monospace;font-size:0.85em">$1</code>')
+
+    // Headers: # ... (only at start of line)
+    html = html.replace(/^### (.+)$/gm, '<strong style="font-size:1rem;display:block;margin:8px 0 4px">$1</strong>')
+    html = html.replace(/^## (.+)$/gm, '<strong style="font-size:1.1rem;display:block;margin:10px 0 4px">$1</strong>')
+    html = html.replace(/^# (.+)$/gm, '<strong style="font-size:1.2rem;display:block;margin:12px 0 4px">$1</strong>')
+
+    // Bold: **...**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic: *...*
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+
+    // Lists: - item or * item
+    html = html.replace(/^[\-\*] (.+)$/gm, '<span style="display:block;padding-left:16px">• $1</span>')
+    // Numbered lists
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<span style="display:block;padding-left:16px">$1. $2</span>')
+
+    // Blockquotes: > ...
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote style="margin:4px 0;padding:4px 12px;border-left:3px solid var(--color-border);color:var(--color-text-secondary)">$1</blockquote>')
+
+    // Links: [text](url)
+    html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--color-accent)">$1</a>')
+
+    return html
+}
+
+function escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 // ── Sidebar conversation item ────────────────────────────────────

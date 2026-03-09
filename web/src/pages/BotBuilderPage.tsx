@@ -1,19 +1,20 @@
-import { useMutation, useAction } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     Bot, FileText, Sparkles, Layers, ArrowRight, Save,
-    Plus, Trash2, GripVertical, Eye, EyeOff, Play, Clock, Zap
+    Plus, Trash2, Eye, EyeOff, Zap
 } from 'lucide-react'
+import { MODEL_REGISTRY, type ModelInfo } from '../../convex/providers'
 
 type Id<T extends string> = string & { __tableName: T }
 
-const MODELS = [
-    { id: 'meta/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', tier: 'Standard' },
-    { id: 'meta/llama-3.1-405b-instruct', name: 'Llama 3.1 405B', tier: 'Premium' },
-    { id: 'mistralai/mixtral-8x7b-instruct-v0.1', name: 'Mixtral 8x7B', tier: 'Standard' },
-    { id: 'google/gemma-2-27b-it', name: 'Gemma 2 27B', tier: 'Standard' },
+const PROVIDERS = [
+    { id: 'openai', name: 'OpenAI', color: '#10a37f' },
+    { id: 'anthropic', name: 'Anthropic', color: '#d97706' },
+    { id: 'google', name: 'Google', color: '#4285f4' },
+    { id: 'nvidia', name: 'NVIDIA', color: '#76b900' },
 ]
 
 const AVATARS = ['🤖', '🧠', '✨', '🎯', '📝', '💡', '🔥', '⚡', '🎨', '📊', '🔬', '🏆']
@@ -22,7 +23,7 @@ const PERSONALITIES = ['friendly', 'professional', 'creative', 'analytical', 'co
 type WorkflowStep = {
     name: string; description: string; systemPrompt: string;
     inputMapping: 'user_message' | 'previous_output' | 'combined' | 'all_context';
-    model: string; temperature: number; maxTokens: number; isVisible: boolean;
+    provider: string; model: string; temperature: number; maxTokens: number; isVisible: boolean;
 }
 
 export default function BotBuilderPage() {
@@ -40,7 +41,8 @@ export default function BotBuilderPage() {
     const [description, setDescription] = useState('')
     const [avatar, setAvatar] = useState('🤖')
     const [type, setType] = useState<'simple' | 'advanced' | 'workflow'>('simple')
-    const [model, setModel] = useState(MODELS[0].id)
+    const [provider, setProvider] = useState('openai')
+    const [model, setModel] = useState('gpt-4o-mini')
 
     // Step 2: Config
     const [systemPrompt, setSystemPrompt] = useState('')
@@ -48,21 +50,30 @@ export default function BotBuilderPage() {
     const [temperature, setTemperature] = useState(0.7)
     const [maxTokens, setMaxTokens] = useState(1024)
     const [contextWindow, setContextWindow] = useState(10)
-    const [outputFormat, setOutputFormat] = useState<'text' | 'json' | 'markdown' | 'code' | 'structured'>('text')
+    const [outputFormat, setOutputFormat] = useState<'text' | 'json' | 'markdown' | 'yaml' | 'code' | 'structured'>('text')
     const [outputInstructions, setOutputInstructions] = useState('')
-    // Few-shot
+    const [responseFormat, setResponseFormat] = useState<'text' | 'json_object' | 'json_schema'>('text')
+    const [jsonSchema, setJsonSchema] = useState('')
     const [examples, setExamples] = useState<Array<{ userMessage: string; assistantResponse: string }>>([])
 
     // Workflow steps
     const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([
-        { name: 'Step 1', description: '', systemPrompt: '', inputMapping: 'user_message', model: '', temperature: 0.7, maxTokens: 1024, isVisible: true },
+        { name: 'Step 1', description: '', systemPrompt: '', inputMapping: 'user_message', provider: '', model: '', temperature: 0.7, maxTokens: 1024, isVisible: true },
     ])
+
+    const filteredModels = MODEL_REGISTRY.filter(m => m.provider === provider && m.capabilities.includes('text'))
+
+    const handleProviderChange = (p: string) => {
+        setProvider(p)
+        const firstModel = MODEL_REGISTRY.find(m => m.provider === p && m.capabilities.includes('text'))
+        if (firstModel) setModel(firstModel.id)
+    }
 
     const addExample = () => setExamples([...examples, { userMessage: '', assistantResponse: '' }])
     const removeExample = (i: number) => setExamples(examples.filter((_, idx) => idx !== i))
 
     const addWorkflowStep = () => setWorkflowSteps([...workflowSteps, {
-        name: `Step ${workflowSteps.length + 1}`, description: '', systemPrompt: '', inputMapping: 'previous_output', model: '', temperature: 0.7, maxTokens: 1024, isVisible: true,
+        name: `Step ${workflowSteps.length + 1}`, description: '', systemPrompt: '', inputMapping: 'previous_output', provider: '', model: '', temperature: 0.7, maxTokens: 1024, isVisible: true,
     }])
     const removeWorkflowStep = (i: number) => setWorkflowSteps(workflowSteps.filter((_, idx) => idx !== i))
     const updateWorkflowStep = (i: number, field: keyof WorkflowStep, value: any) => {
@@ -71,21 +82,23 @@ export default function BotBuilderPage() {
         setWorkflowSteps(updated)
     }
 
+    const selectedModelInfo = MODEL_REGISTRY.find(m => m.id === model)
+
     const handleSave = async () => {
         setSaving(true)
         setError(null)
         try {
-            const botId = await createBot({ name, description, avatar, type, model })
+            const botId = await createBot({ name, description, avatar, type, provider, model })
 
             await saveConfig({
                 botId: botId as Id<"bots">,
                 systemPrompt,
                 personality: personality || undefined,
-                temperature,
-                maxTokens,
-                contextWindow,
+                temperature, maxTokens, contextWindow,
                 outputFormat,
                 outputInstructions: outputInstructions || undefined,
+                responseFormat: responseFormat !== 'text' ? responseFormat : undefined,
+                jsonSchema: jsonSchema || undefined,
                 examples: examples.length > 0 ? examples : undefined,
             })
 
@@ -106,10 +119,10 @@ export default function BotBuilderPage() {
         setSaving(false)
     }
 
-    const inputStyle = {
-        display: 'block' as const, width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 8,
+    const inputStyle: React.CSSProperties = {
+        display: 'block', width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 8,
         border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-        color: 'var(--color-text)', fontSize: '0.9rem',
+        color: 'var(--color-text)', fontSize: '0.9rem', boxSizing: 'border-box',
     }
 
     return (
@@ -120,11 +133,11 @@ export default function BotBuilderPage() {
             </h1>
             <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>Build a chatbot persona with custom prompts and behavior</p>
 
-            {/* Steps */}
+            {/* Steps indicator */}
             <div style={{ display: 'flex', gap: 4, marginBottom: '2rem' }}>
                 {['Identity', 'Configure', type === 'workflow' ? 'Workflow Steps' : 'Review'].map((label, i) => (
                     <div key={i} style={{ flex: 1 }}>
-                        <div style={{ height: 4, borderRadius: 2, marginBottom: 6, background: step > i + 1 ? 'var(--color-accent)' : step === i + 1 ? 'var(--color-accent)' : 'var(--color-border)', opacity: step === i + 1 ? 1 : step > i + 1 ? 0.6 : 0.3 }} />
+                        <div style={{ height: 4, borderRadius: 2, marginBottom: 6, background: step >= i + 1 ? 'var(--color-accent)' : 'var(--color-border)', opacity: step === i + 1 ? 1 : step > i + 1 ? 0.6 : 0.3 }} />
                         <span style={{ fontSize: '0.75rem', color: step >= i + 1 ? 'var(--color-text)' : 'var(--color-text-secondary)' }}>{label}</span>
                     </div>
                 ))}
@@ -156,7 +169,7 @@ export default function BotBuilderPage() {
                     </label>
                     <label style={{ fontSize: '0.85rem', fontWeight: 500 }}>
                         Description
-                        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What does this bot do?" rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What does this bot do?" rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
                     </label>
 
                     <div>
@@ -164,11 +177,11 @@ export default function BotBuilderPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                             {([
                                 { value: 'simple', label: 'Simple', icon: FileText, desc: 'Single system prompt' },
-                                { value: 'advanced', label: 'Advanced', icon: Sparkles, desc: 'Prompt + examples + output format' },
+                                { value: 'advanced', label: 'Advanced', icon: Sparkles, desc: 'Prompt + examples + structured output' },
                                 { value: 'workflow', label: 'Workflow', icon: Layers, desc: 'Multi-step processing chain' },
                             ] as const).map(t => (
                                 <button key={t.value} onClick={() => setType(t.value)} style={{
-                                    padding: '12px', borderRadius: 10, textAlign: 'left' as const, cursor: 'pointer',
+                                    padding: '12px', borderRadius: 10, textAlign: 'left', cursor: 'pointer',
                                     border: type === t.value ? '2px solid var(--color-accent)' : '1px solid var(--color-border)',
                                     background: type === t.value ? 'var(--color-accent)10' : 'var(--color-surface)',
                                 }}>
@@ -180,12 +193,46 @@ export default function BotBuilderPage() {
                         </div>
                     </div>
 
+                    {/* Provider + Model selection */}
+                    <div>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 500, marginBottom: 8, display: 'block' }}>Provider</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                            {PROVIDERS.map(p => (
+                                <button key={p.id} onClick={() => handleProviderChange(p.id)} style={{
+                                    padding: '10px', borderRadius: 8, cursor: 'pointer', textAlign: 'center',
+                                    border: provider === p.id ? `2px solid ${p.color}` : '1px solid var(--color-border)',
+                                    background: provider === p.id ? `${p.color}15` : 'var(--color-surface)',
+                                    fontSize: '0.8rem', fontWeight: provider === p.id ? 600 : 400,
+                                    color: provider === p.id ? p.color : 'var(--color-text)',
+                                }}>{p.name}</button>
+                            ))}
+                        </div>
+                    </div>
+
                     <label style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                        Default Model
+                        Model
                         <select value={model} onChange={e => setModel(e.target.value)} style={inputStyle}>
-                            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name} ({m.tier})</option>)}
+                            {filteredModels.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name} ({m.tier}) — {m.contextWindow >= 1000000 ? `${m.contextWindow / 1000000}M` : `${m.contextWindow / 1000}K`} ctx
+                                </option>
+                            ))}
                         </select>
                     </label>
+
+                    {selectedModelInfo && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {selectedModelInfo.capabilities.map(cap => (
+                                <span key={cap} style={{
+                                    fontSize: '0.7rem', padding: '2px 8px', borderRadius: 12,
+                                    background: 'var(--color-accent)15', color: 'var(--color-accent)',
+                                    border: '1px solid var(--color-accent)30',
+                                }}>
+                                    {cap}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     <button onClick={() => setStep(2)} disabled={!name} style={{
                         padding: '12px 24px', borderRadius: 10, background: 'var(--color-accent)', color: 'white',
@@ -201,7 +248,7 @@ export default function BotBuilderPage() {
                         System Prompt
                         <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
                             placeholder="You are a helpful assistant that..." rows={5}
-                            style={{ ...inputStyle, fontFamily: 'monospace', resize: 'vertical' as const }} />
+                            style={{ ...inputStyle, fontFamily: 'monospace', resize: 'vertical' }} />
                     </label>
 
                     {type !== 'simple' && (
@@ -217,15 +264,39 @@ export default function BotBuilderPage() {
                                 <label style={{ fontSize: '0.85rem', fontWeight: 500 }}>
                                     Output Format
                                     <select value={outputFormat} onChange={e => setOutputFormat(e.target.value as any)} style={inputStyle}>
-                                        {['text', 'json', 'markdown', 'code', 'structured'].map(f => <option key={f} value={f}>{f}</option>)}
+                                        {['text', 'json', 'markdown', 'yaml', 'code', 'structured'].map(f => <option key={f} value={f}>{f}</option>)}
                                     </select>
                                 </label>
+                            </div>
+
+                            {/* Structured Output */}
+                            <div style={{ background: 'var(--color-surface)', borderRadius: 10, border: '1px solid var(--color-border)', padding: 16 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                    <Zap size={16} style={{ color: 'var(--color-warning)' }} />
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Structured Output</span>
+                                </div>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                                    Response Format
+                                    <select value={responseFormat} onChange={e => setResponseFormat(e.target.value as any)} style={inputStyle}>
+                                        <option value="text">Free text</option>
+                                        <option value="json_object">JSON Object (guaranteed valid JSON)</option>
+                                        <option value="json_schema">JSON Schema (strict structure)</option>
+                                    </select>
+                                </label>
+                                {responseFormat === 'json_schema' && (
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 500, marginTop: 8, display: 'block' }}>
+                                        JSON Schema
+                                        <textarea value={jsonSchema} onChange={e => setJsonSchema(e.target.value)}
+                                            placeholder='{"type":"object","properties":{"answer":{"type":"string"}}}'
+                                            rows={4} style={{ ...inputStyle, fontFamily: 'monospace', resize: 'vertical' }} />
+                                    </label>
+                                )}
                             </div>
 
                             <label style={{ fontSize: '0.85rem', fontWeight: 500 }}>
                                 Output Instructions <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)' }}>(optional)</span>
                                 <textarea value={outputInstructions} onChange={e => setOutputInstructions(e.target.value)}
-                                    placeholder="Always include bullet points..." rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                                    placeholder="Always include bullet points..." rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
                             </label>
 
                             {/* Few-shot examples */}
@@ -282,18 +353,16 @@ export default function BotBuilderPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
                         Each step processes the message through its own prompt. Hidden steps pass output to the next step without showing it.
+                        For a visual node-based workflow builder, use the <a href="/workflow-builder" style={{ color: 'var(--color-accent)' }}>Workflow Builder</a> after creating the bot.
                     </p>
 
                     {workflowSteps.map((ws, i) => (
                         <div key={i} style={{ background: 'var(--color-card)', borderRadius: 12, border: '1px solid var(--color-border)', padding: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <GripVertical size={14} style={{ color: 'var(--color-text-secondary)' }} />
-                                    <input value={ws.name} onChange={e => updateWorkflowStep(i, 'name', e.target.value)}
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)', outline: 'none' }} />
-                                </div>
+                                <input value={ws.name} onChange={e => updateWorkflowStep(i, 'name', e.target.value)}
+                                    style={{ background: 'transparent', border: 'none', fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)', outline: 'none' }} />
                                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                    <button onClick={() => updateWorkflowStep(i, 'isVisible', !ws.isVisible)} title={ws.isVisible ? 'Visible' : 'Hidden'}
+                                    <button onClick={() => updateWorkflowStep(i, 'isVisible', !ws.isVisible)}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: ws.isVisible ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
                                         {ws.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
                                     </button>
@@ -305,18 +374,26 @@ export default function BotBuilderPage() {
 
                             <textarea value={ws.systemPrompt} onChange={e => updateWorkflowStep(i, 'systemPrompt', e.target.value)}
                                 placeholder="System prompt for this step..." rows={3}
-                                style={{ width: '100%', ...inputStyle, fontFamily: 'monospace', marginBottom: 8, resize: 'vertical' as const }} />
+                                style={{ width: '100%', ...inputStyle, fontFamily: 'monospace', marginBottom: 8, resize: 'vertical' }} />
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
                                 <select value={ws.inputMapping} onChange={e => updateWorkflowStep(i, 'inputMapping', e.target.value)} style={inputStyle}>
                                     <option value="user_message">User Message</option>
                                     <option value="previous_output">Previous Output</option>
                                     <option value="combined">Combined</option>
                                     <option value="all_context">Full Context</option>
                                 </select>
+                                <select value={ws.provider} onChange={e => updateWorkflowStep(i, 'provider', e.target.value)} style={inputStyle}>
+                                    <option value="">Bot Default Provider</option>
+                                    {PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                                 <select value={ws.model} onChange={e => updateWorkflowStep(i, 'model', e.target.value)} style={inputStyle}>
-                                    <option value="">Bot Default</option>
-                                    {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                    <option value="">Bot Default Model</option>
+                                    {MODEL_REGISTRY.filter(m => m.capabilities.includes('text') && (!ws.provider || m.provider === ws.provider)).map(m => (
+                                        <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+                                    ))}
                                 </select>
                                 <input type="number" value={ws.maxTokens} onChange={e => updateWorkflowStep(i, 'maxTokens', +e.target.value)}
                                     placeholder="Max tokens" style={inputStyle} />
