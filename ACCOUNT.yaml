@@ -1,0 +1,12 @@
+services:
+  convex:
+    project: ChatIQ
+  vercel:
+    project: ChatIQ
+  stripe:
+    mode: live
+  nvidia:
+    api: nvidia-nims
+  github:
+    owner: mxn2020
+    repo: chatiq

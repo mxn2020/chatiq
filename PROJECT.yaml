@@ -1,0 +1,15 @@
+name: ChatIQ
+description: AI-powered smart chat with multiple AI models
+tier: t3
+lane: fun
+priority: high
+category: app
+focus: active
+open_tasks: 0
+oss: true
+stack: [vite, react, typescript, convex]
+repo: https://github.com/mxn2020/chatiq
+deploy_url: null
+last_active: 2026-03-09
+tags: [chat,ai,messaging,convex]
+notes: null
