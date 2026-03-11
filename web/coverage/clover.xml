@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1773153992582" clover="3.2.0">
+  <project timestamp="1773153992582" name="All files">
+    <metrics statements="57" coveredstatements="52" conditionals="21" coveredconditionals="21" methods="31" coveredmethods="28" elements="109" coveredelements="101" complexity="0" loc="57" ncloc="57" packages="3" files="8" classes="8"/>
+    <package name="components">
+      <metrics statements="51" coveredstatements="47" conditionals="21" coveredconditionals="21" methods="31" coveredmethods="28"/>
+      <file name="CookieBanner.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/CookieBanner.tsx">
+        <metrics statements="15" coveredstatements="15" conditionals="4" coveredconditionals="4" methods="6" coveredmethods="6"/>
+        <line num="3" count="1" type="stmt"/>
+        <line num="6" count="12" type="stmt"/>
+        <line num="8" count="12" type="stmt"/>
+        <line num="9" count="6" type="stmt"/>
+        <line num="10" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="11" count="5" type="stmt"/>
+        <line num="12" count="5" type="stmt"/>
+        <line num="16" count="12" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="18" count="1" type="stmt"/>
+        <line num="21" count="12" type="stmt"/>
+        <line num="22" count="1" type="stmt"/>
+        <line num="23" count="1" type="stmt"/>
+        <line num="26" count="12" type="cond" truecount="2" falsecount="0"/>
+        <line num="28" count="4" type="stmt"/>
+      </file>
+      <file name="ErrorBoundary.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/ErrorBoundary.tsx">
+        <metrics statements="9" coveredstatements="6" conditionals="4" coveredconditionals="4" methods="5" coveredmethods="3"/>
+        <line num="14" count="5" type="stmt"/>
+        <line num="17" count="4" type="stmt"/>
+        <line num="21" count="2" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="29" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="30" count="4" type="stmt"/>
+        <line num="47" count="0" type="stmt"/>
+        <line num="56" count="5" type="stmt"/>
+      </file>
+      <file name="LoadingScreen.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/LoadingScreen.tsx">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="2" count="3" type="stmt"/>
+      </file>
+      <file name="MissingConfigDialog.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/MissingConfigDialog.tsx">
+        <metrics statements="3" coveredstatements="3" conditionals="3" coveredconditionals="3" methods="1" coveredmethods="1"/>
+        <line num="12" count="8" type="stmt"/>
+        <line num="13" count="8" type="cond" truecount="2" falsecount="0"/>
+        <line num="15" count="8" type="stmt"/>
+      </file>
+      <file name="Skeleton.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/Skeleton.tsx">
+        <metrics statements="5" coveredstatements="4" conditionals="3" coveredconditionals="3" methods="5" coveredmethods="4"/>
+        <line num="6" count="28" type="stmt"/>
+        <line num="10" count="9" type="stmt"/>
+        <line num="20" count="2" type="stmt"/>
+        <line num="23" count="8" type="stmt"/>
+        <line num="30" count="0" type="stmt"/>
+      </file>
+      <file name="Toast.tsx" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/components/Toast.tsx">
+        <metrics statements="18" coveredstatements="18" conditionals="7" coveredconditionals="7" methods="13" coveredmethods="13"/>
+        <line num="16" count="1" type="stmt"/>
+        <line num="19" count="20" type="stmt"/>
+        <line num="20" count="20" type="cond" truecount="2" falsecount="0"/>
+        <line num="21" count="17" type="stmt"/>
+        <line num="25" count="17" type="stmt"/>
+        <line num="27" count="17" type="cond" truecount="1" falsecount="0"/>
+        <line num="28" count="8" type="stmt"/>
+        <line num="29" count="8" type="stmt"/>
+        <line num="32" count="17" type="stmt"/>
+        <line num="33" count="2" type="stmt"/>
+        <line num="36" count="17" type="stmt"/>
+        <line num="41" count="9" type="stmt"/>
+        <line num="49" count="9" type="stmt"/>
+        <line num="50" count="8" type="stmt"/>
+        <line num="51" count="8" type="stmt"/>
+        <line num="54" count="9" type="cond" truecount="2" falsecount="0"/>
+        <line num="58" count="9" type="stmt"/>
+        <line num="62" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="i18n">
+      <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="i18n.ts" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/i18n/i18n.ts">
+        <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="7" count="0" type="stmt"/>
+      </file>
+    </package>
+    <package name="lib">
+      <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="modelRegistry.ts" path="/Users/mehdinabhani/Projects/antigravity/fun_projects/chatiq/web/src/lib/modelRegistry.ts">
+        <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="37" count="1" type="stmt"/>
+        <line num="44" count="1" type="stmt"/>
+        <line num="49" count="1" type="stmt"/>
+        <line num="55" count="1" type="stmt"/>
+      </file>
+    </package>
+  </project>
+</coverage>

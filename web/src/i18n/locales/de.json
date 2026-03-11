@@ -1,0 +1,29 @@
+{
+    "nav": {
+        "pricing": "Preise",
+        "dashboard": "Dashboard",
+        "login": "Anmelden",
+        "profile": "Profil",
+        "theme": "Design wechseln"
+    },
+    "landing": {
+        "title": "Willkommen bei Ihrer App",
+        "subtitle": "Der beste Weg, Ihre nächste großartige Idee zu verwirklichen.",
+        "cta": "Jetzt starten",
+        "features": "Funktionen"
+    },
+    "common": {
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "loading": "Wird geladen...",
+        "error": "Ein Fehler ist aufgetreten",
+        "success": "Erfolg",
+        "tryAgain": "Erneut versuchen"
+    },
+    "auth": {
+        "signIn": "Anmelden",
+        "signOut": "Abmelden",
+        "email": "E-Mail-Adresse",
+        "password": "Passwort"
+    }
+}
