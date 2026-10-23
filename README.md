@@ -1,7 +1,7 @@
 # ChatIQ
 
 [![CI](https://github.com/mxn2020/chatiq/actions/workflows/ci.yml/badge.svg)](https://github.com/mxn2020/chatiq/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
 
 AI-powered smart chat with multiple AI models and conversation management.
 
@@ -75,7 +75,7 @@ chatiq/
 ├── PROJECT.yaml            # Project metadata
 ├── ACCOUNT.yaml            # Service credentials config
 ├── CHANGELOG.md            # Release history
-├── LICENSE                 # MIT License
+├── LICENSE                 # Apache-2.0 License
 ├── CONTRIBUTING.md         # Contribution guide
 ├── SECURITY.md             # Security policy
 ├── CODE_OF_CONDUCT.md      # Community guidelines
@@ -100,3 +100,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+> **License note:** As of 2026-10-23 this project is licensed under the Apache License 2.0 (previously MIT). Versions released before this change remain available under MIT to those who received them.
